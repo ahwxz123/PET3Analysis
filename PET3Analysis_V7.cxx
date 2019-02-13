@@ -550,7 +550,7 @@ int main(int argc, char** argv)
       TH1F *Energy1= hist1d("Energy1",Nbin,0,Nbin,"Energy first","Entries");
       TH1F *Energy2= hist1d("Energy2",Nbin,0,Nbin,"Energy second","Entries");
       TH1F *Energy = hist1d("Energy",Nbin,0,Nbin,"Energy","Entries");
-      TH1F *Time = hist1d("Time",Ntimebin,-Ntimebin/2,Ntimebin/2,"Timediff(0.3125ps)","Entries");
+      TH1F *Time = hist1d("Time",Ntimebin,-Ntimebin/2,Ntimebin/2,"Time","Entries");
       
       TH2S *EnergyvsRing = hist2dS("EnergyvsRing",NZX,0,NZX,Nbin,0,Nbin,"Axial","Energy");
       TH2S *EnergyvsAngle = hist2dS("EnergyvsAngle",NCX,0,NCX,Nbin,0,Nbin,"TransAxial","Energy");
@@ -563,7 +563,7 @@ int main(int argc, char** argv)
           EnergyModule[i] =hist1d(buf,Nbin,0,Nbin,"Energy","Entries");
           if(i<halfNmod){
               sprintf(buf,"time_couple_%dvs%d",i,i+halfNmod);
-              Timecouple[i] =hist1d(buf,400,-200,200,"Time diff(0.3125ps)","Entries");
+              Timecouple[i] =hist1d(buf,400,-200,200,"Time","Entries");
           }
       }
       
@@ -573,10 +573,10 @@ int main(int argc, char** argv)
             EnergySubMod[i][j] = hist1dS(buf,Nbin,0,Nbin,"Energy","Entries");
         }
      }
-     TH2S *TimevsAngle =hist2dS("TimevsAngle",NCX,0,NCX,400,-200,200,"Angle","Timediff(0.3125ps)");
-     TH2S *TimevsRing =hist2dS("TimevsRing",NZX,0,NZX,400,-200,200,"Axial","Timediff(0.3125ps)");
+     TH2S *TimevsAngle =hist2dS("TimevsAngle",NCX,0,NCX,400,-200,200,"Angle","Time");
+     TH2S *TimevsRing =hist2dS("TimevsRing",NZX,0,NZX,400,-200,200,"Axial","Time");
      
-     TH2S *ThetavsS =hist2dS("ThetavsS",334,-350.7,350.7,304,0,PI,"S (mm)","Theta (rad)");
+     TH2S *ThetavsS =hist2dS("ThetavsS",334,-350.7,350.7,304,0,PI,"S","Theta");
 
      Countmap ->SetStats(kFALSE);
      Countmap1->SetStats(kFALSE);

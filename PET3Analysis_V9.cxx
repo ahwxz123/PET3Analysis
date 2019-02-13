@@ -74,7 +74,8 @@ void ShowVersion(int a_returnCode){
     cout<<"     :Singles High32 Low32 exchange.                           2019/01/18 "<<endl;
     cout<<"     :SetStats flag On, 2D floop map flag-off                  2019/01/21 "<<endl;
     cout<<"     :FakerFlag6400000                                         2019/01/21 "<<endl;
-    cout<<"     :FOV cut                                                  2019/01/21 "<<endl;
+    cout<<"     :FOV cut ( diameter mm)                                   2019/01/21 "<<endl;
+    cout<<"     :Text in Total result                                     2019/01/21 "<<endl;
     cout<<endl;
     exit(a_returnCode);
 }
@@ -399,6 +400,7 @@ int main(int argc, char** argv)
             else{
                 string optionpara = (string) argv[i+1];
                 FOV = atoi(optionpara.c_str());
+                FOV = floor(NCX*acos(FOV/(2*R))/PI) ;
                 if(FOV<0 ){
                     cerr<<"******** invalid paramters for option:"<<option<<endl;
                     cerr<<"******** it should be a 1-303 integral number     !!!  recommend among 100-280,default 100  ..."<<endl;
@@ -550,7 +552,7 @@ int main(int argc, char** argv)
       TH1F *Energy1= hist1d("Energy1",Nbin,0,Nbin,"Energy first","Entries");
       TH1F *Energy2= hist1d("Energy2",Nbin,0,Nbin,"Energy second","Entries");
       TH1F *Energy = hist1d("Energy",Nbin,0,Nbin,"Energy","Entries");
-      TH1F *Time = hist1d("Time",Ntimebin,-Ntimebin/2,Ntimebin/2,"Timediff(0.3125ps)","Entries");
+      TH1F *Time = hist1d("Time",Ntimebin,-Ntimebin/2,Ntimebin/2,"Timediff(0.3125ns)","Entries");
       
       TH2S *EnergyvsRing = hist2dS("EnergyvsRing",NZX,0,NZX,Nbin,0,Nbin,"Axial","Energy");
       TH2S *EnergyvsAngle = hist2dS("EnergyvsAngle",NCX,0,NCX,Nbin,0,Nbin,"TransAxial","Energy");
@@ -563,7 +565,7 @@ int main(int argc, char** argv)
           EnergyModule[i] =hist1d(buf,Nbin,0,Nbin,"Energy","Entries");
           if(i<halfNmod){
               sprintf(buf,"time_couple_%dvs%d",i,i+halfNmod);
-              Timecouple[i] =hist1d(buf,400,-200,200,"Time diff(0.3125ps)","Entries");
+              Timecouple[i] =hist1d(buf,400,-200,200,"Time diff(0.3125ns)","Entries");
           }
       }
       
@@ -573,8 +575,8 @@ int main(int argc, char** argv)
             EnergySubMod[i][j] = hist1dS(buf,Nbin,0,Nbin,"Energy","Entries");
         }
      }
-     TH2S *TimevsAngle =hist2dS("TimevsAngle",NCX,0,NCX,400,-200,200,"Angle","Timediff(0.3125ps)");
-     TH2S *TimevsRing =hist2dS("TimevsRing",NZX,0,NZX,400,-200,200,"Axial","Timediff(0.3125ps)");
+     TH2S *TimevsAngle =hist2dS("TimevsAngle",NCX,0,NCX,400,-200,200,"Angle","Timediff(0.3125ns)");
+     TH2S *TimevsRing =hist2dS("TimevsRing",NZX,0,NZX,400,-200,200,"Axial","Timediff(0.3125ns)");
      
      TH2S *ThetavsS =hist2dS("ThetavsS",334,-350.7,350.7,304,0,PI,"S (mm)","Theta (rad)");
 
@@ -595,7 +597,7 @@ int main(int argc, char** argv)
       string AxialANDTransName        = path_to_output_file+"/"+"Axial_AND_Trans_Hist";
       string EnergyTotalName          = path_to_output_file+"/"+"Energy_Total_Hist";
       string EnergyModuleName         = path_to_output_file+"/"+"Energy_Module_Hist";
-      string EnergyBankName           = path_to_output_file+"/"+"Energy_Bank_Hist";
+      string EnergySubModName         = path_to_output_file+"/"+"Energy_Submodule_Hist";
       string EnergyvsAngleName        = path_to_output_file+"/"+"Energy_vs_angle_Hist";
       string EnergyvsRingName         = path_to_output_file+"/"+"Energy_vs_ring_Hist";
       string Energvs2DimensionsName   = path_to_output_file+"/"+"Energy_vs_ring_Energy_vs_angle_Hist";
@@ -611,7 +613,9 @@ int main(int argc, char** argv)
       string AxialANDTransPdf        =AxialANDTransName+".pdf";
       string EnergyModulePdf         =EnergyModuleName+".pdf";
       string EnergyTotalPdf          =EnergyTotalName+".pdf";
-      string EnergyBankPdf           =EnergyBankName+".pdf";
+      string EnergySubModPdf1        =EnergySubModName+".pdf[";
+      string EnergySubModPdf2        =EnergySubModName+".pdf";
+      string EnergySubModPdf3        =EnergySubModName+".pdf]";
       string EnergyvsAnglePdf        =EnergyvsAngleName+".pdf";
       string EnergyvsRingPdf         =EnergyvsRingName+".pdf";
       string Energvs2DimensionsPdf   =Energvs2DimensionsName+".pdf";
@@ -626,7 +630,7 @@ int main(int argc, char** argv)
       string AxialANDTransPng        =AxialANDTransName+".png";
       string EnergyModulePng         =EnergyModuleName+".png";
       string EnergyTotalPng          =EnergyTotalName+".png";
-      string EnergyBankPng           =EnergyBankName+".png";
+      string EnergySubModPng         =EnergySubModName+".png";
       string EnergyvsAnglePng        =EnergyvsAngleName+".png";
       string EnergyvsRingPng         =EnergyvsRingName+".png";
       string Energvs2DimensionsPng   =Energvs2DimensionsName+".png";
@@ -718,7 +722,7 @@ int main(int argc, char** argv)
                 if(CoincidenceFlag!= datatest){
                     fakerflag++;
                     if(fakerflag>=FakerFlagThreshold)ShowWrongDataType(1);
-                   cout<<"-----------------faker flag" <<endl;
+                   //cout<<"-----------------faker flag" <<endl;
                     continue;
                 }
                 else{
@@ -955,6 +959,7 @@ int main(int argc, char** argv)
     MycanvasSetting(c2,0.15,0.14,0.15,0.15);
 
     //TVirtualPad *tv[6], *tvp[3],*tvpad[2];
+    TVirtualPad *tvp[6];
      if(data_type==coin_data_type){
          if(Save_Sino){
              c1->Clear();
@@ -986,14 +991,44 @@ int main(int argc, char** argv)
          Energy1->Draw();
          c1->cd(2);
          Energy2->Draw();
-         c1->cd(3);
+         TVirtualPad *virtualpad = c1->cd(3);
+         MyPadSetting(virtualpad,0.15,0.14,0.15,0.15);
+         virtualpad->cd();
+         TF1 *fitf1 =new TF1("fitf1","gaus",-1e3,1e3);
+         Energy->GetXaxis()->SetRangeUser(10,Nbin-10);
          Energy->Draw();
+         double maxheight = Energy->GetMaximum();
+         int maxheightbin = Energy->GetMaximumBin();
+         double rms = Energy->GetRMS();
+         fitf1->SetParameters(maxheight,maxheightbin,rms);
+         Energy->Fit(fitf1,"QNC","",maxheightbin-rms,maxheightbin+rms);
+         float mean511 = fitf1 ->GetParameter(1); 
+         float sigma511 = fitf1 ->GetParameter(2);
+         TText energytext;
+         energytext.SetNDC();
+         sprintf(buf,"Peak postion :%3.2f   FWHM: %3.2f%%",mean511, 235.4*sigma511/mean511);
+         energytext.SetText(0.27,0.3,buf);
+         energytext.Draw("same");
          if(Save_Pdf)c1->Print(EnergyTotalPdf.c_str());
          if(Save_Png)c1->Print(EnergyTotalPng.c_str());
   
          c2->Clear();
          c2->cd();
+         TF1 *fitf2 =new TF1("fitf2","gaus",-1e3,1e3);
+         Time->GetXaxis()->SetRangeUser(-300,300);
          Time->Draw();
+         Time->Fit(fitf2,"QNC","",-300,300);
+         float timemean = fitf2 ->GetParameter(1); 
+         float timesigma = fitf2 ->GetParameter(2);
+         Time->Fit(fitf2,"QNC","",timemean-timesigma,timemean+timesigma);
+         timemean = fitf2 ->GetParameter(1);
+         timesigma = fitf2 ->GetParameter(2);
+         fitf2->Draw("same");
+         TText timetext;
+         timetext.SetNDC();
+         sprintf(buf,"Peak postion :%3.2f   FWHM: %3.2f ns",timemean, 2.354*timesigma*fineLSB);
+         timetext.SetText(0.27,0.3,buf);
+         timetext.Draw("same");
          if(Save_Pdf)c2->Print(TimeTotalPdf.c_str());
          if(Save_Png)c2->Print(TimeTotalPng.c_str());
   
@@ -1025,6 +1060,7 @@ int main(int argc, char** argv)
          }
          if(Save_Pdf)c2->Print(EnergyModulePdf.c_str());
          if(Save_Png)c2->Print(EnergyModulePng.c_str());
+         
          
          //c1->Clear();
          //for(int i=0;i<Nmod;i++){
@@ -1098,8 +1134,28 @@ int main(int argc, char** argv)
          TimevsRing->Draw("colz");
          if(Save_Pdf)c1->Print(TimevsRingPdf.c_str());
          if(Save_Png)c1->Print(TimevsRingPng.c_str());
-     
-     
+
+        
+        if(Save_Pdf){
+            c2->Clear();
+            c2->Print(EnergySubModPdf1.c_str());
+            for(int i=0;i<NSubTx;i++){
+                for(int j=0;j<NSubAx;j++){
+                    if(j==0){
+                      c2->Clear();
+                      c2->Divide(3,2);
+                    }
+                    tvp[j%6] =c2->cd(j%6+1);
+                    EnergySubMod[j][i]->Draw();
+                    
+                    if(j==NSubAx-1){
+                       c2 ->Print(EnergySubModPdf2.c_str());
+                    }
+                 }
+            }
+            c2->Print(EnergySubModPdf3.c_str());
+        }
+         
          if(Save_Bin){
              if(Save_Sino){
                  unsigned int bb[304];
@@ -1149,7 +1205,21 @@ int main(int argc, char** argv)
 
         c1->Clear();
         c1->cd();
-        Energy->Draw();
+         TF1 *fitf1 =new TF1("fitf1","gaus",-1e3,1e3);
+         Energy->GetXaxis()->SetRangeUser(10,Nbin-10);
+         Energy->Draw();
+         double maxheight = Energy->GetMaximum();
+         int maxheightbin = Energy->GetMaximumBin();
+         double rms = Energy->GetRMS();
+         fitf1->SetParameters(maxheight,maxheightbin,rms);
+         Energy->Fit(fitf1,"QNC","",1,Nbin);
+         float mean511 = fitf1 ->GetParameter(1); 
+         float sigma511 = fitf1 ->GetParameter(2);
+         TText energytext;
+         energytext.SetNDC();
+         sprintf(buf,"Peak postion :%3.2f   FWHM: %3.2f%",mean511, 235.4*sigma511/mean511);
+         energytext.SetText(0.27,0.3,buf);
+         energytext.Draw("same");
         if(Save_Pdf)c1->Print(EnergyTotalPdf.c_str());
         if(Save_Png)c1->Print(EnergyTotalPng.c_str());
 
@@ -1168,6 +1238,26 @@ int main(int argc, char** argv)
         if(Save_Pdf)c2->Print(EnergyModulePdf.c_str());
         if(Save_Png)c2->Print(EnergyModulePng.c_str());
         
+        if(Save_Pdf){
+            c2->Clear();
+            c2->Print(EnergySubModPdf1.c_str());
+            for(int i=0;i<NSubTx;i++){
+                for(int j=0;j<NSubAx;j++){
+                    if(j==0){
+                      c2->Clear();
+                      c2->Divide(3,2);
+                    }
+                    tvp[j%6] =c2->cd(j%6+1);
+                    EnergySubMod[j][i]->Draw();
+                    
+                    if(j==NSubAx-1){
+                       c2 ->Print(EnergySubModPdf2.c_str());
+                    }
+                 }
+            }
+            c2->Print(EnergySubModPdf3.c_str());
+        }
+         
         c1->Clear();
         c1->Divide(1,2);
         c1->cd(1);
@@ -1217,6 +1307,7 @@ int main(int argc, char** argv)
          fclose(binfile);
      }
     
+
 
 
 	return 0;

@@ -29,18 +29,14 @@ const unsigned int Nbin=1024;
 const unsigned int ELUTN=29884416;
 const int NCX=608;
 const int NZX=48;
-const int NSubAx=6;
-const int NSubTx=76;
 const int Nmod=38;
-const int TxInSubMod=8;
-const int AxInSubMod=8;
+const int TxInMod=16;
 const int TxInBank=16;
 const int AxInBank=24;
-const int TxInMod=16;
-const int AxInMod=24;
+const int AxInMod=48;
 const int halfNmod=19;
 
-const unsigned int FakerFlagThreshold=64000;
+const unsigned int FakerFlagThreshold=6400;
 string FILELIST="FILELIST.txt";
 
 TH1D *hist1dD(char *histname,int Xstep,double xlow,double xup,char*xtitle,char *ytitle);
@@ -62,19 +58,12 @@ double GetZ(int Ax);
 
 void ShowVersion(int a_returnCode){
     cout<<endl;
-    cout<<"   PET3Analysis version  1.1  "<<endl;
+    cout<<"   PET3Analysis version  1.0  "<<endl;
     cout<<"     :add reading depth flag and option.                       2018/12/25 "<<endl;
     cout<<"     :Adc range 1-1022.                                        2018/12/29 "<<endl;
     cout<<"     :input & output exits or not.                             2019/01/02 "<<endl;
-    cout<<"     :Coincidences 0xFFFFFFC Flags;32 events in one flag.      2019/01/11 "<<endl;
-    cout<<"     :Big Endian       .                                       2019/01/11 "<<endl;
+    cout<<"     :Coincidences 0xFFFFFFC Flags;16 events in one flag.      2019/01/11 "<<endl;
     cout<<"     :Singles no flag.                                         2019/01/11 "<<endl;
-    cout<<"     :--------------------       .                             2019/01/02 "<<endl;
-    cout<<"     :Add Submodule Energy;                                    2019/01/14 "<<endl;
-    cout<<"     :Singles High32 Low32 exchange.                           2019/01/18 "<<endl;
-    cout<<"     :SetStats flag On, 2D floop map flag-off                  2019/01/21 "<<endl;
-    cout<<"     :FakerFlag6400000                                         2019/01/21 "<<endl;
-    cout<<"     :FOV cut                                                  2019/01/21 "<<endl;
     cout<<endl;
     exit(a_returnCode);
 }
@@ -107,7 +96,6 @@ void ShowHelp(int a_returnCode){
     cout<<"         [-type   coin/single ] "<<endl;
     cout<<"         [-event  delay/prompt/both ] "<<endl;
     cout<<"         [-dp     number ] "<<endl;
-    cout<<"         [-fov    xxx ] "<<endl;
     cout<<"         [-all    ] "<<endl;
     cout<<"         [-v      ] "<<endl;
     cout<<"         [-h      ] "<<endl;
@@ -128,7 +116,6 @@ void ShowHelp(int a_returnCode){
     cout<<"         -type  YYY                : data file type. YYY: coin/coins/single/singles. (default coincidence data)"<<endl; 
     cout<<"         -event YYY                : event kind. YYY:delay/prompt/both. (default prompt) "<<endl;
     cout<<"         -dp    YYY                : Read only some part of events,YYY is a int number. (default 0xFFFFFFFF) "<<endl;
-    cout<<"         -fov  YYY                 : FOV cut in Calibration, YYY should ben 1-303  ,recommended 101-280, default( 100 ) "<<endl;
     cout<<"         -all                      : save all outputs. raw,hist,pdf,png,binary. "<<endl; 
     cout<<"         -v                        : print the version of this application "<<endl; 
     cout<<"                                     option -version/--version is same as -v  "<<endl;
@@ -157,7 +144,6 @@ int main(int argc, char** argv)
     const string coin_data_type="coin";
     unsigned int ReadDepth=0xFFFFFFFF;
     int event_type=1;           // 0  delay,  1  prompt,   2  both;
-    int FOV=100;                // fov cut times;
     int Percentage=10;          //10%; 
     bool Save_Raw=false;
     bool Save_Hist=true;
@@ -190,9 +176,10 @@ int main(int argc, char** argv)
                 i++;
             }
 
-            FILE *filetest;
-            filetest=fopen(input_file.c_str(),"r");
-            if( filetest==NULL){
+            ifstream _filetest;
+            _filetest.open(input_file.c_str(),ios::in);
+            if(! _filetest){
+                _filetest.close();
                 cerr<<"*********  input file does not exist!!!!  Please recheck the path or file name !!!"<<endl;
                 exit(1);
             }
@@ -206,6 +193,7 @@ int main(int argc, char** argv)
             else{
                 input_file =(string) argv[i+1];
                 ifstream txtfileread;
+                ifstream _filetest;
                 string fname;
                 txtfileread.open(input_file.c_str());
                 if(! txtfileread){
@@ -217,9 +205,9 @@ int main(int argc, char** argv)
                 while(txtfileread.good()){
                     getline(txtfileread, fname);
                     path_to_input_files.push_back(fname);
-                    FILE  *filetest;
-                    filetest=fopen(fname.c_str(),"r");
-                    if(filetest=fopen==NULL){
+                    _filetest.open(fname.c_str(),ios::in);
+                    if(! _filetest){
+                        _filetest.close();
                         cerr<<"*********  input file "<<fname<<"  does not exist!!!!  Please recheck the path or file name !!!"<<endl;
                         exit(1);
                     }
@@ -391,26 +379,6 @@ int main(int argc, char** argv)
     
             i++;
         }
-        else if(option=="-fov"){
-            if(argv[i+1]==NULL){
-                cerr<<"******** argument missing for option:"<<option<<endl;
-                cerr<<"******** using default option !"<<endl;
-            }
-            else{
-                string optionpara = (string) argv[i+1];
-                FOV = atoi(optionpara.c_str());
-                if(FOV<0 ){
-                    cerr<<"******** invalid paramters for option:"<<option<<endl;
-                    cerr<<"******** it should be a 1-303 integral number     !!!  recommend among 100-280,default 100  ..."<<endl;
-                    exit(1);
-                }
-                else{
-                    cout<<"******** FOV cut  ---> "<<FOV <<"  "<<endl;
-                }
-            } 
-    
-            i++;
-        } 
         
         else if(option=="-dp"){
             if(argv[i+1]==NULL){
@@ -480,7 +448,7 @@ int main(int argc, char** argv)
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-      //gStyle->SetOptStat(0);
+      gStyle->SetOptStat(0);
 	  gStyle->SetPadLeftMargin(0.15);
 	  gStyle->SetPadRightMargin(0.15);
 	  gStyle->SetPadTopMargin(0.12);
@@ -504,6 +472,7 @@ int main(int argc, char** argv)
       int index;
       int index1,index2,bankindex1,bankindex2;
       unsigned int eindex1, eindex2;
+	  int bankpeak1[NPixels],bankpeak2[NPixels];
 	  int temp1,temp2;
 	  double cc;
 
@@ -519,10 +488,12 @@ int main(int argc, char** argv)
       
       double x1,y1,x2,y2,z1,z2;
       double theta,S,coeff;
+      unsigned int *Edata=new unsigned int[ELUTN];
+      memset(Edata,0,sizeof(unsigned int)*ELUTN);
 
       int Nshift=0;
-      unsigned int Nslotbyte=64;      
-      unsigned int Nbyte=Nslotbyte/2;      
+      unsigned int Nslotbyte=32;      
+      unsigned int Nbyte=16;      
 	  int data[Nslotbyte];
       ULong64_t datacon[Nslotbyte] ;
       ULong64_t dataeff[Nbyte] ;
@@ -540,7 +511,7 @@ int main(int argc, char** argv)
       Countmap1->GetXaxis()->SetNdivisions(505);
       Countmap2->GetXaxis()->SetNdivisions(505);
       Countmap ->GetXaxis()->SetNdivisions(505);
-
+      
       TH1F *Axial1 = hist1d("Axial_1st",NZX,0,NZX,"Axial","Entries");
       TH1F *Axial2 = hist1d("Axial_2nd",NZX,0,NZX,"Axial","Entries");
       TH1F *Axial = hist1d("Axial",NZX,0,NZX,"Axial","Entries");
@@ -548,44 +519,28 @@ int main(int argc, char** argv)
       TH1F *TransAxial2 = hist1d("Trans_Axial_2nd",NCX,0,NCX,"Axial","Entries");
       TH1F *TransAxial = hist1d("Trans_Axial",NCX,0,NCX,"Axial","Entries");
       TH1F *Energy1= hist1d("Energy1",Nbin,0,Nbin,"Energy first","Entries");
-      TH1F *Energy2= hist1d("Energy2",Nbin,0,Nbin,"Energy second","Entries");
+      TH1F *Energy2= hist1d("Energy1",Nbin,0,Nbin,"Energy second","Entries");
       TH1F *Energy = hist1d("Energy",Nbin,0,Nbin,"Energy","Entries");
-      TH1F *Time = hist1d("Time",Ntimebin,-Ntimebin/2,Ntimebin/2,"Timediff(0.3125ps)","Entries");
+      TH1F *Time = hist1d("Time",Ntimebin,-Ntimebin/2,Ntimebin/2,"Time","Entries");
       
       TH2S *EnergyvsRing = hist2dS("EnergyvsRing",NZX,0,NZX,Nbin,0,Nbin,"Axial","Energy");
       TH2S *EnergyvsAngle = hist2dS("EnergyvsAngle",NCX,0,NCX,Nbin,0,Nbin,"TransAxial","Energy");
 
       TH1F *EnergyModule[Nmod];
-      TH1S *EnergySubMod[NSubAx][NSubTx];
       TH1F *Timecouple[halfNmod];
       for(int i=0;i<Nmod;i++){
           sprintf(buf,"Energy_mod%d",i);
           EnergyModule[i] =hist1d(buf,Nbin,0,Nbin,"Energy","Entries");
           if(i<halfNmod){
               sprintf(buf,"time_couple_%dvs%d",i,i+halfNmod);
-              Timecouple[i] =hist1d(buf,400,-200,200,"Time diff(0.3125ps)","Entries");
+              Timecouple[i] =hist1d(buf,400,-200,200,"Time","Entries");
           }
       }
-      
-      for(int i=0;i<NSubAx;i++){
-        for(int j=0;j<NSubTx;j++){
-            sprintf(buf,"Energy_SubMod_Ax%d_Tx%d",i,j);
-            EnergySubMod[i][j] = hist1dS(buf,Nbin,0,Nbin,"Energy","Entries");
-        }
-     }
-     TH2S *TimevsAngle =hist2dS("TimevsAngle",NCX,0,NCX,400,-200,200,"Angle","Timediff(0.3125ps)");
-     TH2S *TimevsRing =hist2dS("TimevsRing",NZX,0,NZX,400,-200,200,"Axial","Timediff(0.3125ps)");
-     
-     TH2S *ThetavsS =hist2dS("ThetavsS",334,-350.7,350.7,304,0,PI,"S (mm)","Theta (rad)");
 
-     Countmap ->SetStats(kFALSE);
-     Countmap1->SetStats(kFALSE);
-     Countmap2->SetStats(kFALSE);
-     EnergyvsAngle ->SetStats(kFALSE);
-     EnergyvsRing  ->SetStats(kFALSE);
-     TimevsAngle ->SetStats(kFALSE);
-     TimevsRing  ->SetStats(kFALSE);
-     ThetavsS    ->SetStats(kFALSE);
+     TH2S *TimevsAngle =hist2dS("TimevsAngle",NCX,0,NCX,400,-200,200,"Angle","Time");
+     TH2S *TimevsRing =hist2dS("TimevsRing",NZX,0,NZX,400,-200,200,"Axial","Time");
+     
+     TH2S *ThetavsS =hist2dS("ThetavsS",334,-350.7,350.7,304,0,PI,"S","Theta");
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////                                              string for pdf/png                                              ////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -714,21 +669,19 @@ int main(int argc, char** argv)
             while(fin.good() &&Readcounts<= ReadDepth ){
                 fin.read((char*)(&datatest), sizeof(unsigned int));
                 Readcounts +=1;
-                //datatest = PET3RawdataConvert(datatest);
+                datatest = PET3RawdataConvert(datatest);
                 if(CoincidenceFlag!= datatest){
                     fakerflag++;
                     if(fakerflag>=FakerFlagThreshold)ShowWrongDataType(1);
-                   cout<<"-----------------faker flag" <<endl;
+                   cout<<"-----------------------------------faker flag" <<endl;
                     continue;
                 }
                 else{
                     fin.read((char*)(&data), Nslotbyte*sizeof(unsigned int));
                     Readcounts +=Nslotbyte;
                     for(int i=0; i<Nbyte; i++){
-                        //datacon[2*i]   = PET3RawdataConvert(data[2*i]);
-                        //datacon[2*i+1] = PET3RawdataConvert(data[2*i+1]);
-                        datacon[2*i]   =data[2*i];
-                        datacon[2*i+1] =data[2*i+1];
+                        datacon[2*i]   = PET3RawdataConvert(data[2*i]);
+                        datacon[2*i+1] = PET3RawdataConvert(data[2*i+1]);
                         dataeff[i] = ((datacon[2*i] )<<32) | (datacon[2*i+1] &0xFFFFFFFF);
                     }
 
@@ -770,7 +723,6 @@ int main(int argc, char** argv)
     	                if(Save_Raw)raw->Fill();
                         if(Ax1>=NZX || Ax2>=NZX || Tx1>=NCX||Tx2>=NCX)continue;    
                         if(Adc1==0 || Adc1>=Nbin-1 || Adc2==0||Adc2>=Nbin-1 )continue;    
-                        if(abs(Tx1-Tx2)<FOV || abs(Tx1-Tx2)>NCX-FOV)continue;
                         
                         if(Save_Hist){
                             Axial1 ->Fill(Ax1); 
@@ -798,14 +750,7 @@ int main(int argc, char** argv)
                       
                             EnergyvsAngle->Fill(Tx1,Adc1);
                             EnergyvsAngle->Fill(Tx2,Adc2);
-                      
-                            index1 = Ax1/AxInSubMod;
-                            index2 = Tx1/TxInSubMod;
-                            EnergySubMod[index1][index2]->Fill(Adc1);
-                            index1 = Ax2/AxInSubMod;
-                            index2 = Tx2/TxInSubMod;
-                            EnergySubMod[index1][index2]->Fill(Adc2);
-                             
+                       
                             index1 = Tx1/TxInMod;
                             index2 = Tx2/TxInMod;
                             EnergyModule[index1]->Fill(Adc1);
@@ -823,6 +768,7 @@ int main(int argc, char** argv)
                             Time->Fill(-tdiff);
                             Time->Fill( tdiff);
 
+
                             TimevsAngle ->Fill(Tx1,tdiff);
                             TimevsAngle ->Fill(Tx2,-tdiff);
                             
@@ -837,15 +783,19 @@ int main(int argc, char** argv)
             }
         }
         if(data_type==single_data_type){
+            //for(int KK=0;KK<1e5;KK++){
             while(fin.good() && Readcounts<= ReadDepth ){
                 fin.read((char*)(&data),4*Nslotbyte);
                 Readcounts += Nslotbyte;
+                //for(int i=0; i<Nslotbyte; i++){
+                //   // fin>>data[i];
+                //    cout<<hex<<data[i]<<"  ";
+                //    if(i%2==1)cout<<endl;
+                //}
                 
                 for(int i=0; i<Nbyte; i++){
-                    //datacon[2*i]   = PET3RawdataConvert(data[2*i+1]);
-                    //datacon[2*i+1] = PET3RawdataConvert(data[2*i]);
-                    datacon[2*i]   = (data[2*i+1]);
-                    datacon[2*i+1] = (data[2*i]);
+                    datacon[2*i]   = PET3RawdataConvert(data[2*i+1]);
+                    datacon[2*i+1] = PET3RawdataConvert(data[2*i]);
                     dataeff[i] = ((datacon[2*i+1] )<<32) | (datacon[2*i] &0xFFFFFFFF);
                     //cout<<hex<<datacon[2*i+1]<<" "<<datacon[2*i]<<endl;
                 }
@@ -871,11 +821,8 @@ int main(int argc, char** argv)
                                 Countmap ->Fill(Tx*1./TxInBank,Ax*1./AxInBank);
                                 EnergyvsRing->Fill(Ax,Adc);
                                 EnergyvsAngle->Fill(Tx,Adc);
-                                Energy ->Fill(Adc);
+                                Energy->Fill(Tx,Adc);
                         
-                                index1 = Ax/AxInSubMod;
-                                index2 = Tx/TxInSubMod;
-                                EnergySubMod[index1][index2]->Fill(Adc);
                                 index = Tx/TxInBank;
                                 EnergyModule[index]->Fill(Adc);
                             }
@@ -916,11 +863,6 @@ int main(int argc, char** argv)
        for(int i=0;i<Nmod;i++){
             EnergyModule[i]->Write();
        }
-      for(int i=0 ;i<NSubAx;i++){
-        for(int j=0 ;j<NSubTx;j++){
-            EnergySubMod[i][j]->Write();
-        }
-      }
        if(data_type==coin_data_type){
            Countmap1->Write();
            Countmap2->Write();
